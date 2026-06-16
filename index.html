@@ -186,6 +186,7 @@ select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.o
 .frow:active{background:#FAFAFB}
 .frow .nm{font-size:14.5px;font-weight:500}
 .frow .meta{font-size:11.5px;color:var(--t2);background:var(--chip);padding:2px 9px;border-radius:20px}
+.paytag{font-size:11px;color:var(--accent);background:var(--accent-bg);padding:2px 8px;border-radius:7px;font-weight:600;white-space:nowrap}
 .frow .amt{margin-left:auto;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .frow .amt.neg{color:var(--neg)}
 .frow .amt.plus{color:var(--income)}
@@ -477,6 +478,7 @@ select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.o
   <div class="field"><label id="fc-name-lbl">이름</label><input id="fc-name" type="text" maxlength="24" placeholder="예: 넷플릭스"></div>
   <div class="field"><label id="fc-amt-lbl">금액 (원)</label><input id="fc-amt" class="amt-input tnum" type="number" inputmode="numeric" placeholder="0"></div>
   <div class="field hide" id="fc-group-wrap"><label>그룹</label><div class="grp-chips" id="fc-group-chips"></div><input id="fc-group" type="text" placeholder="새 그룹 직접 입력" maxlength="16" style="margin-top:8px"></div>
+  <div class="field hide" id="fc-pay-wrap"><label id="fc-pay-lbl">결제수단</label><div class="grp-chips" id="fc-pay-chips"></div><input id="fc-pay" type="text" placeholder="예: 신한카드, 카카오페이" maxlength="20" style="margin-top:8px"></div>
   <div class="field hide" id="fc-left-wrap"><label>남은 개월수 (이 개월 뒤 자동 종료)</label><input id="fc-left" type="number" inputmode="numeric" placeholder="예: 5"></div>
   <div class="field hide" id="fc-month-wrap"><label>결제 달</label><select id="fc-month"></select></div>
   <div class="acts"><button onclick="closeSheet('fc-bg')">취소</button><button class="dang hide" id="fc-del" onclick="delFc()">삭제</button><button class="save" onclick="saveFc()">저장</button></div>
@@ -895,7 +897,7 @@ function genSec(s){
   const tot=s.arr.reduce((a,b)=>a+b.amt,0),cls=s.sign==='+'?'plus':'neg';
   let h='<div class="sec"><div class="sec-h"><div class="ic sm">'+icon(s.ic,17)+'</div><span class="nm">'+s.t+'</span><span class="tot '+(s.sign==='+'?'plus':'')+'">'+s.sign+won(tot)+'</span><button class="add" onclick="openFc(\''+s.kind+'\')">'+icon('plus',17,2.2)+'</button></div>';
   if(!s.arr.length)h+='<div class="frow none">아직 없어요 · ＋로 추가</div>';
-  s.arr.forEach(x=>{h+='<div class="frow" onclick="openFc(\''+s.kind+'\','+x.id+')"><span class="nm">'+esc(x.name)+'</span>'+(s.meta?'<span class="meta">'+s.meta(x)+'</span>':'')+'<span class="amt '+cls+'">'+s.sign+won(x.amt)+'</span></div>';});
+  s.arr.forEach(x=>{h+='<div class="frow" onclick="openFc(\''+s.kind+'\','+x.id+')"><span class="nm">'+esc(x.name)+'</span>'+(x.pay?'<span class="paytag">'+esc(x.pay)+'</span>':'')+(s.meta?'<span class="meta">'+s.meta(x)+'</span>':'')+'<span class="amt '+cls+'">'+s.sign+won(x.amt)+'</span></div>';});
   return h+'</div>';
 }
 function recurSec(){
@@ -907,7 +909,7 @@ function recurSec(){
   Object.keys(byG).sort((a,b)=>{const ia=ord.indexOf(a),ib=ord.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);}).forEach(g=>{
     const items=byG[g],gt=items.reduce((a,b)=>a+b.amt,0),col=fcGroupCollapsed[g];
     h+='<div class="grp" onclick="toggleGrp(\''+esc(g)+'\')"><span class="ar">'+icon(col?'cr':'cd',16)+'</span><span class="gn">'+esc(g)+'</span><span class="gc">'+items.length+'</span><span class="gt">-'+won(gt)+'</span></div>';
-    if(!col)items.forEach(x=>{h+='<div class="frow sub" onclick="openFc(\'recur\','+x.id+')"><span class="nm">'+esc(x.name)+'</span><span class="amt neg">-'+won(x.amt)+'</span></div>';});
+    if(!col)items.forEach(x=>{h+='<div class="frow sub" onclick="openFc(\'recur\','+x.id+')"><span class="nm">'+esc(x.name)+'</span>'+(x.pay?'<span class="paytag">'+esc(x.pay)+'</span>':'')+'<span class="amt neg">-'+won(x.amt)+'</span></div>';});
   });
   return h+'</div>';
 }
@@ -1020,12 +1022,16 @@ function saveAsset(){const name=document.getElementById('a-name').value.trim(),t
 function delAsset(){if(aform.id)ASSET=ASSET.filter(x=>x.id!==aform.id);save();closeSheet('asset-bg');render();toast('삭제됨');}
 
 const FC_META={
-  income:{title:'월 수입',amtLbl:'월 금액 (원)',namePh:'예: 급여'},
-  recur:{title:'고정비 (정기결제)',amtLbl:'월 금액 (원)',namePh:'예: 넷플릭스',group:true},
-  install:{title:'카드 할부',amtLbl:'월 납입액 (원)',namePh:'예: 노트북 할부',left:true},
-  loan:{title:'대출 상환',amtLbl:'월 원리금 (원)',namePh:'예: 주택담보대출',left:true},
-  event:{title:'이벤트성 지출',amtLbl:'금액 (원)',namePh:'예: 여름 휴가',month:true},
+  income:{title:'월 수입',amtLbl:'월 금액 (원)',namePh:'예: 급여',pay:true,payLbl:'입금처 (어디로 들어오나)'},
+  recur:{title:'고정비 (정기결제)',amtLbl:'월 금액 (원)',namePh:'예: 넷플릭스',group:true,pay:true,payLbl:'결제수단 (어디서 나가나)'},
+  install:{title:'카드 할부',amtLbl:'월 납입액 (원)',namePh:'예: 노트북 할부',left:true,pay:true,payLbl:'결제수단 (어느 카드)'},
+  loan:{title:'대출 상환',amtLbl:'월 원리금 (원)',namePh:'예: 주택담보대출',left:true,pay:true,payLbl:'출금 계좌 (어디서 나가나)'},
+  event:{title:'이벤트성 지출',amtLbl:'금액 (원)',namePh:'예: 여름 휴가',month:true,pay:true,payLbl:'결제수단'},
 };
+const PAY_PRESETS=['카카오페이','네이버페이','토스','현금'];
+function payOptions(){const a=ASSET.map(x=>x.name).filter(Boolean);return [...new Set(a.concat(PAY_PRESETS))];}
+function renderPayChips(sel){document.getElementById('fc-pay-chips').innerHTML=payOptions().map(p=>'<button class="chip'+(p===sel?' act':'')+'" onclick="pickPay(this.dataset.p)" data-p="'+esc(p)+'"><span class="t">'+esc(p)+'</span></button>').join('');}
+function pickPay(p){document.getElementById('fc-pay').value=p;renderPayChips(p);}
 function fcArr(kind){return {income:INCOME,recur:RECUR,install:INSTALL,loan:LOAN,event:EVENT}[kind];}
 function openFc(kind,id){
   fcform={kind,id:id||null};const meta=FC_META[kind];
@@ -1042,6 +1048,8 @@ function openFc(kind,id){
   document.getElementById('fc-left').value=item&&item.left!=null?item.left:'';
   if(meta.month)document.getElementById('fc-month').value=item&&item.mi!=null?item.mi:0;
   if(meta.group){const g=item?(item.group||''):'';document.getElementById('fc-group').value=g;renderGroupChips(g);}
+  document.getElementById('fc-pay-wrap').classList.toggle('hide',!meta.pay);
+  if(meta.pay){document.getElementById('fc-pay-lbl').textContent=meta.payLbl||'결제수단';const p=item?(item.pay||''):'';document.getElementById('fc-pay').value=p;renderPayChips(p);}
   document.getElementById('fc-del').classList.toggle('hide',!item);
   openM('fc-bg');
 }
@@ -1053,6 +1061,7 @@ function saveFc(){
   if(meta.left){const l=parseInt(document.getElementById('fc-left').value,10);if(!l||l<=0){toast('남은 개월수를 입력해 주세요');return;}obj.left=l;}
   if(meta.month)obj.mi=parseInt(document.getElementById('fc-month').value,10);
   if(meta.group)obj.group=document.getElementById('fc-group').value.trim()||'기타';
+  if(meta.pay)obj.pay=document.getElementById('fc-pay').value.trim();
   if(fcform.id){Object.assign(arr.find(x=>x.id===fcform.id),obj);}else{obj.id=nextId();arr.push(obj);}
   save();closeSheet('fc-bg');render();toast('저장됨');
 }
