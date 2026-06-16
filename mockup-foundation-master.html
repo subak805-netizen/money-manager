@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>머니 UI 파운데이션 — 마스터 기준표</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<style>
+/* ===== 머니 파운데이션 토큰 (FPF 파운데이션과 동일한 구조·이름 규칙, 색은 머니 뉴트럴) ===== */
+:root{
+  /* ① 원시 토큰 (테마 무관 · FPF와 공통) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px;
+  --h-s:28px; --h-m:34px; --h-l:42px; --h-touch:44px;
+  --t-caption:11px; --t-label:12px; --t-body:13px; --t-title:15px; --t-h:18px; --t-display:30px;
+  --lh-tight:1.3; --lh-body:1.55; --fw-reg:400; --fw-med:600; --fw-bold:700; --fw-x:800;
+  --content-max:520px;
+  /* ② 의미 토큰 (머니 = 깔끔한 뉴트럴) */
+  --page-bg:#F4F5F6; --card-bg:#FFFFFF; --text:#1A1A1C; --t2:#6E7177; --t3:#A8ABB2;
+  --card-bd:#ECEDEF; --card-bdw:1px;
+  --input-bg:#FFFFFF; --input-bd:#ECEDEF;
+  --accent:#1C1C1F; --accent-bg:#EEEFF1; --on-accent:#fff;
+  --ok:#1E9E63; --ok-bg:#E8F7EF; --red:#E5484D; --red-bg:#FDECEC; --warn:#E0982F;
+  --chip:#F1F2F4; --chip-ic:#54575E; --dark:#1C1C1F;
+  --r-sm:10px; --r-md:14px; --r-lg:20px; --r-pill:999px;
+  --el-1:0 1px 2px rgba(20,20,30,.05), 0 4px 14px -10px rgba(20,20,40,.12);
+  --el-2:0 1px 2px rgba(20,20,30,.05), 0 10px 28px -16px rgba(20,20,40,.14);
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;
+  --font-display:var(--font);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page-bg);color:var(--text);font-family:var(--font);
+  -webkit-font-smoothing:antialiased;letter-spacing:-.012em;padding:0 0 60px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 18px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--t2);background:var(--chip);padding:1px 6px;border-radius:6px}
+
+/* 상단바 */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(244,245,246,.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--card-bd);padding:16px 0;margin-bottom:8px}
+.topbar .wrap{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand{font-size:22px;font-weight:var(--fw-x);letter-spacing:-.04em}
+.brand b{color:var(--accent)}
+.brand small{display:block;font-size:var(--t-label);color:var(--t2);font-weight:var(--fw-med);margin-top:3px;letter-spacing:0}
+.note{margin-left:auto;font-size:var(--t-label);color:var(--t3);font-weight:var(--fw-med);max-width:360px;text-align:right;line-height:1.5}
+
+/* 섹션 */
+.sec{margin:38px 0 0}
+.sec-title{font-size:var(--t-h);font-weight:var(--fw-x);margin:0 0 16px;display:flex;align-items:center;gap:10px;letter-spacing:-.02em}
+.sec-title .n{width:26px;height:26px;border-radius:var(--r-sm);background:var(--accent);color:var(--on-accent);
+  font-size:var(--t-label);font-weight:var(--fw-bold);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.sec-title small{font-size:var(--t-label);color:var(--t3);font-weight:var(--fw-med);letter-spacing:0}
+.grid{display:grid;gap:14px}
+.cols-2{grid-template-columns:repeat(2,1fr)}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:760px){.cols-3,.cols-4{grid-template-columns:repeat(2,1fr)}}
+.panel{background:var(--card-bg);border:1px solid var(--card-bd);border-radius:var(--r-lg);padding:18px;box-shadow:var(--el-1)}
+.panel h4{margin:0 0 12px;font-size:var(--t-label);font-weight:var(--fw-bold);color:var(--t2);text-transform:uppercase;letter-spacing:.04em}
+
+/* COLOR */
+.sw-row{display:flex;align-items:center;gap:11px;font-size:var(--t-body);font-weight:var(--fw-med);padding:7px 0}
+.sw{width:34px;height:34px;border-radius:var(--r-sm);border:1px solid rgba(0,0,0,.07);flex:0 0 auto}
+.sw-row code{margin-left:auto}
+
+/* TYPE */
+.type-row{display:flex;align-items:baseline;gap:14px;padding:10px 0;border-bottom:1px solid var(--card-bd)}
+.type-row:last-child{border-bottom:none}
+.type-row .meta{margin-left:auto;text-align:right;flex:0 0 auto}
+.type-row .meta code{display:inline-block;margin-left:4px}
+
+/* SPACING */
+.sp-row{display:flex;align-items:center;gap:12px;padding:6px 0;font-size:var(--t-body)}
+.sp-bar{height:14px;background:var(--accent);border-radius:3px}
+.sp-row code{flex:0 0 64px}
+
+/* SHAPE */
+.shape-box{height:60px;background:var(--accent-bg);border:1px solid var(--card-bd);margin-bottom:8px}
+.elev{height:60px;background:var(--card-bg);border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:var(--t-label);color:var(--t2);font-weight:var(--fw-med)}
+.h-demo{display:flex;align-items:flex-end;gap:12px}
+.h-demo .b{width:54px;background:var(--chip);border:1px solid var(--card-bd);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:var(--t-caption);color:var(--t2);font-weight:var(--fw-bold)}
+
+/* ===== COMPONENTS (앱과 동일) ===== */
+.btn{height:var(--h-l);padding:0 18px;border-radius:var(--r-md);border:1px solid var(--card-bd);background:var(--card-bg);
+  color:var(--text);font-family:inherit;font-size:var(--t-body);font-weight:var(--fw-bold);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.danger{color:var(--red);border-color:var(--red-bd,#F3C9CB)}
+.btn.lg{height:54px;border-radius:var(--r-md);font-size:15px;width:100%}
+.ipt,.sel{height:var(--h-l);width:100%;padding:0 14px;border:1px solid var(--input-bd);border-radius:12px;
+  background:var(--input-bg);color:var(--text);font-family:inherit;font-size:var(--t-body);-webkit-appearance:none;appearance:none}
+.ipt:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.row-flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* 칩 (카테고리) */
+.cchip{height:66px;width:80px;border:1px solid var(--input-bd);border-radius:var(--r-md);background:var(--card-bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--chip-ic)}
+.cchip .t{font-size:var(--t-caption);color:var(--t2);font-weight:var(--fw-med)}
+.cchip.on{border-color:var(--accent);background:var(--accent-bg);color:var(--accent)}
+.cchip.on .t{color:var(--accent);font-weight:var(--fw-bold)}
+
+/* 세그먼트 */
+.seg{display:inline-flex;background:#ECECF0;border-radius:13px;padding:4px;gap:0}
+.seg button{height:42px;padding:0 26px;border:none;background:none;border-radius:10px;font-weight:var(--fw-bold);color:var(--t2);cursor:pointer;font-family:inherit}
+.seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(20,20,40,.12)}
+.seg button.on.g{color:var(--ok)}
+
+/* 체크 */
+.cbx{display:inline-flex;align-items:center;gap:9px;font-size:var(--t-body);font-weight:var(--fw-med);cursor:pointer}
+.cbx .bx{width:22px;height:22px;border-radius:7px;border:1.8px solid #D2D4D8;display:flex;align-items:center;justify-content:center;color:#fff}
+.cbx.on .bx{background:var(--accent);border-color:var(--accent)}
+
+/* 뱃지 */
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:var(--fw-x);padding:2px 7px;border-radius:6px}
+.badge.auto{color:var(--accent);background:var(--accent-bg)}
+.badge.ok{color:var(--ok);background:var(--ok-bg)}
+.badge.red{color:var(--red);background:var(--red-bg)}
+
+/* 리스트 카드 / 행 */
+.lcard{background:var(--card-bg);border-radius:var(--r-lg);box-shadow:var(--el-1);overflow:hidden;border:1px solid var(--card-bd)}
+.lrow{display:flex;align-items:center;gap:13px;padding:14px 16px}
+.lrow:not(:first-child){box-shadow:inset 0 1px 0 var(--card-bd)}
+.ic{width:38px;height:38px;border-radius:12px;background:var(--chip);color:var(--chip-ic);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.lrow .mid{flex:1;min-width:0}
+.lrow .nm{font-size:var(--t-title);font-weight:var(--fw-med)}
+.lrow .sub{font-size:12.5px;color:var(--t3);margin-top:1px}
+.lrow .amt{font-size:15.5px;font-weight:var(--fw-bold);letter-spacing:-.03em}
+.lrow .amt.ok{color:var(--ok)}
+.lrow .amt.red{color:var(--red)}
+
+/* 빠른입력 */
+.quick{display:flex;gap:8px;align-items:center;background:var(--card-bg);border:1px solid var(--card-bd);border-radius:16px;padding:6px 6px 6px 16px;box-shadow:var(--el-1)}
+.quick input{border:none;height:44px;padding:0;background:none;font-size:var(--t-title);flex:1;font-family:inherit}
+.quick input:focus{outline:none}
+.quick .qbtn{width:44px;height:44px;border-radius:12px;border:none;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
+
+/* 진행바 */
+.bar{height:9px;background:#EAEAEF;border-radius:5px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:5px}
+.bar>i.warn{background:var(--warn)}
+.bar>i.over{background:var(--red)}
+
+/* 히어로 */
+.hero{background:var(--card-bg);border-radius:var(--r-lg);padding:20px;box-shadow:var(--el-1)}
+.hero .l{font-size:var(--t-body);color:var(--t3)}
+.hero .big{font-size:var(--t-display);font-weight:var(--fw-x);letter-spacing:-.045em;margin:4px 0 0}
+.hero-dark{background:linear-gradient(155deg,#2C2C31,#1A1A1C);border-radius:var(--r-lg);padding:20px;color:#fff;box-shadow:0 18px 40px -22px rgba(0,0,0,.32)}
+.hero-dark .l{font-size:var(--t-body);color:#9A9CA3}
+.hero-dark .big{font-size:var(--t-display);font-weight:var(--fw-x);letter-spacing:-.045em;margin:4px 0 0}
+
+svg{display:block}
+.tnum{font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="wrap">
+  <div class="brand">머니<b>.</b> UI 파운데이션 <small>마스터 기준표 · 색·타이포·간격·형태·컴포넌트</small></div>
+  <div class="note">FPF 파운데이션과 <b>동일한 토큰 구조·이름 규칙</b>을 쓰되, 색은 머니의 깔끔한 뉴트럴. 새 화면·컴포넌트는 이 토큰만 사용.</div>
+</div></div>
+
+<div class="wrap">
+
+  <!-- 1 COLOR -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="n">1</span> 색 COLOR <small>의미 토큰 · 하드코딩 금지</small></h2>
+    <div class="grid cols-3">
+      <div class="panel"><h4>표면 Surface</h4>
+        <div class="sw-row"><span class="sw" style="background:var(--page-bg)"></span>페이지 배경<code>--page-bg</code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--card-bg)"></span>카드<code>--card-bg</code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--chip)"></span>칩·아이콘칩<code>--chip</code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--dark)"></span>다크 시그니처<code>--dark</code></div>
+      </div>
+      <div class="panel"><h4>텍스트 Text</h4>
+        <div class="sw-row"><span class="sw" style="background:var(--text)"></span>본문<code>--text</code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--t2)"></span>보조<code>--t2</code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--t3)"></span>흐림<code>--t3</code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--card-bd)"></span>구분선<code>--card-bd</code></div>
+      </div>
+      <div class="panel"><h4>포인트 & 의미</h4>
+        <div class="sw-row"><span class="sw" style="background:var(--accent)"></span>액센트(잉크)<code>--accent</code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--accent-bg)"></span>액센트 배경<code>--accent-bg</code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--ok)"></span>수입·긍정<code>--ok</code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--red)"></span>지출초과·부채<code>--red</code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--warn)"></span>경고<code>--warn</code></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 TYPE -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="n">2</span> 타이포 TYPE <small>Pretendard · 6단계</small></h2>
+    <div class="panel">
+      <div class="type-row"><span style="font-size:var(--t-display);font-weight:var(--fw-x);letter-spacing:-.045em">7,028,000원</span><span class="meta"><small style="color:var(--t3)">금액 디스플레이</small> <code>--t-display 30 / 800</code></span></div>
+      <div class="type-row"><span style="font-size:var(--t-h);font-weight:var(--fw-x)">섹션 제목 Heading</span><span class="meta"><code>--t-h 18 / 800</code></span></div>
+      <div class="type-row"><span style="font-size:var(--t-title);font-weight:var(--fw-med)">행 제목 · 카테고리 Title</span><span class="meta"><code>--t-title 15 / 600</code></span></div>
+      <div class="type-row"><span style="font-size:var(--t-body);font-weight:var(--fw-reg)">본문 텍스트 Body</span><span class="meta"><code>--t-body 13 / 400</code></span></div>
+      <div class="type-row"><span style="font-size:var(--t-label);font-weight:var(--fw-med);color:var(--t2)">라벨 Label</span><span class="meta"><code>--t-label 12 / 600</code></span></div>
+      <div class="type-row"><span style="font-size:var(--t-caption);font-weight:var(--fw-med);color:var(--t3)">캡션 Caption</span><span class="meta"><code>--t-caption 11</code></span></div>
+    </div>
+  </section>
+
+  <!-- 3 SPACING -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="n">3</span> 간격 SPACING <small>base 4 스케일</small></h2>
+    <div class="panel">
+      <div class="sp-row"><code>--sp-1</code><span class="sp-bar" style="width:4px"></span>4</div>
+      <div class="sp-row"><code>--sp-2</code><span class="sp-bar" style="width:8px"></span>8</div>
+      <div class="sp-row"><code>--sp-3</code><span class="sp-bar" style="width:12px"></span>12</div>
+      <div class="sp-row"><code>--sp-4</code><span class="sp-bar" style="width:16px"></span>16</div>
+      <div class="sp-row"><code>--sp-5</code><span class="sp-bar" style="width:20px"></span>20</div>
+      <div class="sp-row"><code>--sp-6</code><span class="sp-bar" style="width:24px"></span>24</div>
+      <div class="sp-row"><code>--sp-8</code><span class="sp-bar" style="width:32px"></span>32</div>
+      <div class="sp-row"><code>--sp-10</code><span class="sp-bar" style="width:40px"></span>40</div>
+    </div>
+  </section>
+
+  <!-- 4 SHAPE -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="n">4</span> 형태 SHAPE <small>반경 · 그림자 · 컨트롤 높이</small></h2>
+    <div class="grid cols-3">
+      <div class="panel"><h4>반경 Radius</h4>
+        <div class="shape-box" style="border-radius:var(--r-sm)"></div><code>--r-sm 10</code>
+        <div class="shape-box" style="border-radius:var(--r-md);margin-top:10px"></div><code>--r-md 14</code>
+        <div class="shape-box" style="border-radius:var(--r-lg);margin-top:10px"></div><code>--r-lg 20</code> · <code>--r-pill 999</code>
+      </div>
+      <div class="panel"><h4>그림자 Elevation</h4>
+        <div class="elev" style="box-shadow:var(--el-1)">--el-1 (카드·칩)</div>
+        <div class="elev" style="box-shadow:var(--el-2);margin-top:16px">--el-2 (히어로·떠있는 카드)</div>
+      </div>
+      <div class="panel"><h4>컨트롤 높이 Height</h4>
+        <div class="h-demo">
+          <div class="b" style="height:var(--h-s)">S<br>28</div>
+          <div class="b" style="height:var(--h-m)">M<br>34</div>
+          <div class="b" style="height:var(--h-l)">L<br>42</div>
+          <div class="b" style="height:var(--h-touch)">터치<br>44</div>
+        </div>
+        <p style="font-size:var(--t-caption);color:var(--t3);margin:12px 0 0">탭 타깃은 ≥ <code>--h-touch 44</code> (아이폰)</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 COMPONENTS -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="n">5</span> 컴포넌트 COMPONENTS <small>실제 앱과 동일</small></h2>
+    <div class="grid cols-2">
+
+      <div class="panel"><h4>버튼 Button</h4>
+        <div class="row-flex">
+          <button class="btn pri">기본 (잉크)</button>
+          <button class="btn">보조</button>
+          <button class="btn danger">삭제</button>
+        </div>
+        <div style="margin-top:12px"><button class="btn pri lg" id="b-plus">내역 추가</button></div>
+      </div>
+
+      <div class="panel"><h4>입력 Input / Select</h4>
+        <input class="ipt" placeholder="금액 (원)" style="margin-bottom:9px">
+        <select class="sel"><option>통장</option><option>현금</option><option>투자·증권</option></select>
+      </div>
+
+      <div class="panel"><h4>세그먼트 Toggle</h4>
+        <div class="seg"><button class="on">지출</button><button class="g">수입</button></div>
+      </div>
+
+      <div class="panel"><h4>체크 · 뱃지</h4>
+        <div class="row-flex" style="gap:18px">
+          <span class="cbx on"><span class="bx" id="ck"></span>선택됨</span>
+          <span class="cbx"><span class="bx"></span>해제</span>
+        </div>
+        <div class="row-flex" style="margin-top:14px;gap:8px">
+          <span class="badge auto">자동</span>
+          <span class="badge ok">수입</span>
+          <span class="badge red">초과</span>
+        </div>
+      </div>
+
+      <div class="panel"><h4>카테고리 칩 Chip</h4>
+        <div class="row-flex">
+          <button class="cchip on" id="c1"></button>
+          <button class="cchip" id="c2"></button>
+          <button class="cchip" id="c3"></button>
+        </div>
+      </div>
+
+      <div class="panel"><h4>진행바 Progress</h4>
+        <div class="bar" style="margin-bottom:12px"><i style="width:42%"></i></div>
+        <div class="bar" style="margin-bottom:12px"><i class="warn" style="width:88%"></i></div>
+        <div class="bar"><i class="over" style="width:100%"></i></div>
+      </div>
+
+      <div class="panel" style="grid-column:1/-1"><h4>빠른입력 Quick Add</h4>
+        <div class="quick"><input placeholder="스타벅스 4500  —  엔터로 바로 기록"><button class="qbtn" id="q"></button></div>
+      </div>
+
+      <div class="panel"><h4>리스트 카드 List</h4>
+        <div class="lcard">
+          <div class="lrow"><span class="ic" id="i1"></span><span class="mid"><div class="nm">식비 <span class="badge auto">자동</span></div><div class="sub">점심 백반</div></span><span class="amt tnum">-9,000</span></div>
+          <div class="lrow"><span class="ic" id="i2"></span><span class="mid"><div class="nm">급여</div><div class="sub">6월 급여</div></span><span class="amt ok tnum">+5,500,000</span></div>
+        </div>
+      </div>
+
+      <div class="panel"><h4>히어로 Hero</h4>
+        <div class="hero" style="margin-bottom:14px"><div class="l">이번 달 남은 예산</div><div class="big tnum">771,650<span style="font-size:15px;color:var(--t3);font-weight:600"> 원</span></div></div>
+        <div class="hero-dark"><div class="l">순자산</div><div class="big tnum">7,028,000 원</div></div>
+      </div>
+
+    </div>
+  </section>
+
+  <p style="text-align:center;color:var(--t3);font-size:var(--t-label);margin:40px 0 0">머니 디자인 시스템 · DESIGN_GUIDE.md 와 함께 관리 · 토큰 구조는 FPF 파운데이션과 동일</p>
+</div>
+
+<script>
+const ICONS={
+  utensils:'<path d="M4 3v6a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3"/><path d="M6 11v10"/><path d="M18 3c-1.5 0-2.5 2-2.5 5.5V13H18"/><path d="M18 3v18"/>',
+  briefcase:'<rect x="2.5" y="7" width="19" height="13" rx="2.5"/><path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7"/><path d="M2.5 13h19"/>',
+  coffee:'<path d="M17 8h1.5a3 3 0 0 1 0 6H17"/><path d="M3 8h14v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><path d="M6 2v2"/><path d="M10 2v2"/><path d="M14 2v2"/>',
+  bus:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="7.5" cy="20" r="1.6"/><circle cx="16.5" cy="20" r="1.6"/>',
+  bag:'<path d="M6 2 3.5 6.5V20a1.5 1.5 0 0 0 1.5 1.5h14a1.5 1.5 0 0 0 1.5-1.5V6.5L18 2Z"/><path d="M3.5 6.5h17"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>'
+};
+function icon(n,s,sw){return '<svg viewBox="0 0 24 24" width="'+(s||22)+'" height="'+(s||22)+'" fill="none" stroke="currentColor" stroke-width="'+(sw||1.7)+'" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[n]||'')+'</svg>';}
+function set(id,html){var e=document.getElementById(id);if(e)e.innerHTML=html;}
+set('b-plus',icon('plus',18,2.2)+' 내역 추가');
+set('q',icon('plus',22,2.2));
+set('ck',icon('check',15,2.6));
+set('c1',icon('coffee',20)+'<span class="t">카페·간식</span>');
+set('c2',icon('bus',20)+'<span class="t">교통</span>');
+set('c3',icon('bag',20)+'<span class="t">쇼핑</span>');
+set('i1',icon('utensils',19));
+set('i2',icon('briefcase',19));
+</script>
+</body>
+</html>
