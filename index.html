@@ -6,6 +6,9 @@
 <title>머니</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
 :root{
   /* ── 원시 토큰 (FPF 파운데이션 공통 · 테마 무관) ── */
@@ -52,8 +55,13 @@ select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.o
 .hdr{display:flex;align-items:center;justify-content:space-between;padding:22px 22px 12px}
 .logo{font-size:23px;font-weight:800;letter-spacing:-.04em}
 .logo b{color:var(--accent)}
-.cloud{font-size:12px;color:var(--t3);display:flex;align-items:center;gap:5px;font-weight:500}
+.cloud{font-size:12px;color:var(--t3);display:flex;align-items:center;gap:6px;font-weight:500;border:none;background:none;font-family:inherit;cursor:pointer;padding:6px 11px;border-radius:11px}
+.cloud:active{background:var(--chip)}
 .cloud .dot{width:7px;height:7px;border-radius:50%;background:#CFCFD6}
+.cloud.on{color:var(--text);font-weight:600}
+.cloud.on .dot{background:var(--accent)}
+.auth-info{font-size:13.5px;color:var(--t2);line-height:1.6;margin:0 0 16px;font-weight:500}
+.auth-info b{color:var(--text)}
 
 .month-nav{display:flex;align-items:center;justify-content:center;gap:8px;padding:2px 20px 16px}
 .month-nav button{background:none;border:none;width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--t2);cursor:pointer;border-radius:50%;transition:background .15s}
@@ -372,7 +380,7 @@ select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.o
 <div class="shell">
   <div class="hdr">
     <div class="logo">머니<b>.</b></div>
-    <div class="cloud"><span class="dot"></span>이 기기 (동기화 예정)</div>
+    <button class="cloud" id="acct" onclick="openAuth()"><span class="dot" id="acct-dot"></span><span id="acct-t">로그인</span></button>
     <button class="hdr-add" id="hdr-add" onclick="onFab()"></button>
   </div>
 
@@ -474,6 +482,11 @@ select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.o
   <div class="acts"><button onclick="closeSheet('fc-bg')">취소</button><button class="dang hide" id="fc-del" onclick="delFc()">삭제</button><button class="save" onclick="saveFc()">저장</button></div>
 </div></div>
 
+<div class="modal-bg" id="auth-bg"><div class="sheet">
+  <div class="grab"></div><h3 id="auth-title">로그인하고 동기화</h3>
+  <div id="auth-body"></div>
+</div></div>
+
 <div class="modal-bg" id="goal-bg"><div class="sheet">
   <div class="grab"></div><h3 id="goal-title">목표 저금통</h3>
   <div class="field"><label>목표 이름</label><input id="g-name" type="text" maxlength="20" placeholder="예: 유럽 여행"></div>
@@ -572,7 +585,7 @@ let fcGroupCollapsed={};
 function seed(){return{
   tx:[], budget:{}, asset:[], income:[], recur:[], install:[], loan:[], event:[], goals:[], diary:{}, autoPosted:{}
 };}
-function save(){DB={tx:TX,budget:BUD,asset:ASSET,income:INCOME,recur:RECUR,install:INSTALL,loan:LOAN,event:EVENT,goals:GOALS,diary:DIARY,autoPosted:DB.autoPosted};localStorage.setItem(LS_KEY,JSON.stringify(DB));}
+function save(){DB={tx:TX,budget:BUD,asset:ASSET,income:INCOME,recur:RECUR,install:INSTALL,loan:LOAN,event:EVENT,goals:GOALS,diary:DIARY,autoPosted:DB.autoPosted};localStorage.setItem(LS_KEY,JSON.stringify(DB));cloudPush();}
 
 /* ===== 스마트 자동분류 ===== */
 function classify(text,type){
@@ -1046,10 +1059,74 @@ function saveFc(){
 function delFc(){const arr=fcArr(fcform.kind);if(fcform.id){const i=arr.findIndex(x=>x.id===fcform.id);if(i>=0)arr.splice(i,1);}save();closeSheet('fc-bg');render();toast('삭제됨');}
 
 function openM(id){document.getElementById(id).classList.add('on');}
-function closeSheet(id){document.getElementById(id).classList.remove('on');}
+function closeSheet(id){document.getElementById(id).classList.remove('on');flushPendingCloud();}
 let _tt;function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('on'),1600);}
 
-autoPost();paintStatic();render();
+/* ===== Firebase 로그인 + 클라우드 동기화 (fpf-manager 프로젝트 재활용) ===== */
+const FB_CONFIG={apiKey:"AIzaSyCx84fnTSZl9_eTMaUkts0VCyIx4qrql2I",authDomain:"fpf-manager.firebaseapp.com",projectId:"fpf-manager",storageBucket:"fpf-manager.firebasestorage.app",messagingSenderId:"415966666310",appId:"1:415966666310:web:9c4bb75cd2594cc744b447"};
+let fbUser=null,fbDB=null,fbAuth=null,_rtUnsub=null,_pushT=null,_pushedTs='',_pendingCloud=null;
+function initFb(att){att=att||0;
+  if(typeof firebase==='undefined'){if(att<40)setTimeout(()=>initFb(att+1),150);else console.warn('Firebase SDK 로드 실패(오프라인?)');return;}
+  try{firebase.initializeApp(FB_CONFIG);fbAuth=firebase.auth();fbDB=firebase.firestore();
+    fbAuth.onAuthStateChanged(function(u){fbUser=u;setAcct();if(u)startCloudSync();else stopCloudSync();});
+  }catch(e){console.error('Firebase init 실패',e);}
+}
+function setAcct(){
+  const dot=document.getElementById('acct-dot'),t=document.getElementById('acct-t'),b=document.getElementById('acct');
+  if(!t)return;
+  if(fbUser){const em=fbUser.email||'';t.textContent=(em.split('@')[0]||'계정')+' · 동기화';b.classList.add('on');}
+  else{t.textContent='로그인';b.classList.remove('on');}
+}
+function cloudRef(){return fbDB.collection('users').doc(fbUser.uid).collection('data').doc('money');}
+function cloudPush(){
+  if(!fbUser||!fbDB)return;
+  clearTimeout(_pushT);
+  _pushT=setTimeout(function(){
+    const ts=Date.now()+'_'+Math.floor(Math.random()*100000);_pushedTs=ts;
+    cloudRef().set({value:JSON.stringify(DB),ts:ts,at:new Date().toISOString()}).catch(function(e){console.error('cloud push',e);if(e.code==='permission-denied')toast('동기화 권한 오류 — 규칙 확인 필요');});
+  },700);
+}
+function startCloudSync(){
+  if(!fbUser||!fbDB)return;
+  if(_rtUnsub){try{_rtUnsub();}catch(e){}_rtUnsub=null;}
+  let first=true;
+  _rtUnsub=cloudRef().onSnapshot(function(snap){
+    if(snap.metadata&&snap.metadata.hasPendingWrites)return;
+    if(!snap.exists){cloudPush();first=false;return;}
+    const d=snap.data();if(!d||!d.value)return;
+    if(d.ts&&d.ts===_pushedTs)return;
+    let data;try{data=JSON.parse(d.value);}catch(e){return;}
+    if(!data)return;
+    if(isBusy()){_pendingCloud=data;return;}
+    applyCloud(data,!first);first=false;
+  },function(e){console.error('onSnapshot',e);if(e.code==='permission-denied')toast('동기화 권한 오류 — 규칙 확인 필요');});
+}
+function stopCloudSync(){if(_rtUnsub){try{_rtUnsub();}catch(e){}_rtUnsub=null;}}
+function isBusy(){if(document.querySelector('.modal-bg.on'))return true;const a=document.activeElement;return a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);}
+function flushPendingCloud(){if(_pendingCloud&&!isBusy()){const d=_pendingCloud;_pendingCloud=null;applyCloud(d,true);}}
+function applyCloud(data,notify){
+  DB=data;TX=DB.tx||[];BUD=DB.budget||{};ASSET=DB.asset||[];INCOME=DB.income||[];RECUR=DB.recur||[];INSTALL=DB.install||[];LOAN=DB.loan||[];EVENT=DB.event||[];GOALS=DB.goals||[];DIARY=DB.diary||{};if(!DB.autoPosted)DB.autoPosted={};
+  localStorage.setItem(LS_KEY,JSON.stringify(DB));
+  render();
+  if(notify)toast('다른 기기 변경이 반영됐어요');
+}
+function openAuth(){
+  const body=document.getElementById('auth-body'),title=document.getElementById('auth-title');
+  if(fbUser){
+    title.textContent='내 계정';
+    body.innerHTML='<p class="auth-info">로그인됨: <b>'+esc(fbUser.email||'')+'</b><br>폰·PC 어디서나 같은 데이터로 동기화돼요.</p><div class="acts"><button onclick="closeSheet(\'auth-bg\')">닫기</button><button class="dang" onclick="doLogout()">로그아웃</button></div>';
+  }else{
+    title.textContent='로그인하고 동기화';
+    body.innerHTML='<p class="auth-info">로그인하면 <b>폰·PC 어디서나 같은 데이터</b>로 보고, 자동 백업돼요. (내 데이터는 내 계정으로만 잠겨요)</p><div class="field"><label>이메일</label><input id="lg-email" type="email" inputmode="email" autocomplete="username" placeholder="you@email.com"></div><div class="field"><label>비밀번호</label><input id="lg-pw" type="password" autocomplete="current-password" placeholder="6자 이상"></div><div class="acts"><button onclick="closeSheet(\'auth-bg\')">취소</button><button class="save" onclick="doLogin()">로그인</button></div><button class="csv-sample" style="margin-top:9px" onclick="doSignup()">처음이세요? 새 계정 만들기</button>';
+  }
+  openM('auth-bg');
+}
+function doLogin(){const e=document.getElementById('lg-email').value.trim(),p=document.getElementById('lg-pw').value;if(!e||!p){toast('이메일·비밀번호를 입력해 주세요');return;}if(!fbAuth){toast('연결 준비 중 — 잠시 후 다시');return;}fbAuth.signInWithEmailAndPassword(e,p).then(function(){closeSheet('auth-bg');toast('로그인됨 · 동기화 시작');}).catch(function(err){toast(authMsg(err));});}
+function doSignup(){const e=document.getElementById('lg-email').value.trim(),p=document.getElementById('lg-pw').value;if(!e||!p){toast('이메일·비밀번호를 입력해 주세요');return;}if(p.length<6){toast('비밀번호는 6자 이상');return;}if(!fbAuth){toast('연결 준비 중 — 잠시 후 다시');return;}fbAuth.createUserWithEmailAndPassword(e,p).then(function(){closeSheet('auth-bg');toast('계정 생성·로그인됨');}).catch(function(err){toast(authMsg(err));});}
+function doLogout(){if(fbAuth)fbAuth.signOut();stopCloudSync();closeSheet('auth-bg');toast('로그아웃됨 (데이터는 이 기기에 남아있어요)');}
+function authMsg(err){const c=err&&err.code||'';if(c.indexOf('wrong-password')>=0||c.indexOf('invalid-credential')>=0)return '비밀번호가 틀려요';if(c.indexOf('user-not-found')>=0)return '없는 계정이에요 · 새로 만들어 주세요';if(c.indexOf('email-already')>=0)return '이미 가입된 이메일 · 로그인해 주세요';if(c.indexOf('invalid-email')>=0)return '이메일 형식을 확인해 주세요';if(c.indexOf('weak-password')>=0)return '비밀번호는 6자 이상';if(c.indexOf('network')>=0)return '인터넷 연결을 확인해 주세요';return '오류: '+c;}
+
+autoPost();paintStatic();render();setAcct();initFb();
 </script>
 </body>
 </html>
