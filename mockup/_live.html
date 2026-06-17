@@ -187,6 +187,8 @@ select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.o
 .frow .nm{font-size:14.5px;font-weight:500}
 .frow .meta{font-size:11.5px;color:var(--t2);background:var(--chip);padding:2px 9px;border-radius:20px}
 .paytag{font-size:11px;color:var(--accent);background:var(--accent-bg);padding:2px 8px;border-radius:7px;font-weight:600;white-space:nowrap}
+.pf-amt{text-align:right;flex-shrink:0}
+.pf-amt .amt{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.45}
 .frow .amt{margin-left:auto;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .frow .amt.neg{color:var(--neg)}
 .frow .amt.plus{color:var(--income)}
@@ -357,7 +359,7 @@ select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.o
   #asset-hero{max-width:640px}
   #asset-list{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
   /* 예측: 히어로/흐름 폭 제한, 재료 2열 */
-  #fc-hero,.flow,.chart-card,.goal,#report-body{max-width:720px}
+  #fc-hero,.flow,.chart-card,.goal,#report-body,#payflow{max-width:720px}
   #fc-secs{column-count:2;column-gap:20px}
   #fc-secs .sec{break-inside:avoid;margin-bottom:14px}
 }
@@ -425,6 +427,8 @@ select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.o
     <div class="chart-card" id="fc-chart"></div>
     <div class="lbl-row"><span class="t">월 평균 흐름</span></div>
     <div class="flow" id="fc-flow"></div>
+    <div class="lbl-row"><span class="t">결제수단별 월 흐름</span></div>
+    <div id="payflow"></div>
     <div class="lbl-row"><span class="t">목표 저금통</span><span class="mini" onclick="openGoal()">＋ 목표 추가</span></div>
     <div id="goal-list"></div>
     <div class="lbl-row"><span class="t">예측 재료 · 등록하면 12개월에 자동 반영</span></div>
@@ -883,6 +887,7 @@ function renderForecast(){
     '<div class="r minus"><span>대출 상환</span><span class="v">-'+won(loanAvg)+'</span></div>'+
     '<div class="r minus"><span>이벤트성 (월 평균)</span><span class="v">-'+won(evAvg)+'</span></div>'+
     '<div class="r res"><span>월 평균 잉여</span><span class="v">'+won(avg)+'</span></div>';
+  renderPayflow();
   renderGoals(avg);
   const html=[
     genSec({kind:'income',ic:'wallet',t:'월 수입',arr:INCOME,sign:'+'}),
@@ -935,6 +940,28 @@ function renderGoals(avg){
 function openGoal(id){goalId=(typeof id==='number')?id:null;const g=goalId?GOALS.find(x=>x.id===goalId):null;document.getElementById('goal-title').textContent=g?'목표 수정':'목표 저금통';document.getElementById('g-name').value=g?g.name:'';document.getElementById('g-target').value=g?g.target:'';document.getElementById('g-saved').value=g?g.saved:'';document.getElementById('g-del').classList.toggle('hide',!g);openM('goal-bg');}
 function saveGoal(){const name=document.getElementById('g-name').value.trim(),target=parseInt(document.getElementById('g-target').value,10),saved=parseInt(document.getElementById('g-saved').value,10)||0;if(!name){toast('목표 이름을 입력해 주세요');return;}if(!target||target<=0){toast('목표 금액을 입력해 주세요');return;}if(goalId){Object.assign(GOALS.find(x=>x.id===goalId),{name,target:Math.round(target),saved:Math.round(saved)});}else GOALS.push({id:nextId(),name,target:Math.round(target),saved:Math.round(saved)});save();closeSheet('goal-bg');render();toast('목표 저장됨');}
 function delGoal(){if(goalId)GOALS=GOALS.filter(x=>x.id!==goalId);save();closeSheet('goal-bg');render();toast('목표 삭제됨');}
+
+/* ===== 결제수단별 월 흐름 ===== */
+function payIcon(n){if(/카드/.test(n))return 'card';if(/페이|토스|현금|wallet/.test(n))return 'wallet';if(n==='미지정')return 'more';return 'landmark';}
+function payFlow(){
+  const m={};
+  function add(name,amt,dir,label){name=(name&&name.trim())||'미지정';(m[name]=m[name]||{in:0,out:0,items:[]});m[name][dir]+=amt;m[name].items.push(label);}
+  INCOME.forEach(x=>add(x.pay,x.amt,'in',x.name));
+  RECUR.forEach(x=>add(x.pay,x.amt,'out',x.name));
+  INSTALL.forEach(x=>add(x.pay,x.amt,'out',x.name));
+  LOAN.forEach(x=>add(x.pay,x.amt,'out',x.name));
+  return m;
+}
+function renderPayflow(){
+  const el=document.getElementById('payflow');if(!el)return;
+  const m=payFlow(),keys=Object.keys(m);
+  if(!keys.length){el.innerHTML='<div class="card" style="padding:15px 16px;color:var(--t3);font-size:13px;text-align:center">항목에 결제수단을 정하면<br>카드·통장별로 매달 얼마 나가는지 여기 모여요</div>';return;}
+  keys.sort((a,b)=>m[b].out-m[a].out||m[b].in-m[a].in);
+  let h='<div class="card">';
+  keys.forEach(k=>{const o=m[k],items=o.items.slice(0,3).join(' · ')+(o.items.length>3?' 외 '+(o.items.length-3):'');
+    h+='<div class="row"><div class="ic">'+icon(payIcon(k),19)+'</div><div class="mid"><div class="nm">'+esc(k)+'</div><div class="sub">'+esc(items)+'</div></div><div class="pf-amt">'+(o.in?'<div class="amt inc">+'+won(o.in)+'</div>':'')+(o.out?'<div class="amt neg">-'+won(o.out)+'</div>':'')+'</div></div>';});
+  h+='</div>';el.innerHTML=h;
+}
 
 /* ===== 소비 다이어리 ===== */
 function renderDiaryToday(){
